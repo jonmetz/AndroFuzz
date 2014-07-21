@@ -38,7 +38,6 @@ class AndroidLogger:
             log_line = self.__read()
             if not log_line:
                 break
-            # elif app in log_line:
             logs.append(log_line)
         return logs
 
@@ -73,7 +72,6 @@ def open_files(files, intent='android.intent.action.VIEW', mimetype='application
     logger = AndroidLogger()
     package_installer = PackageInstaller()
     applications = package_installer.install_applications()
-    files = [files[0], files[1]]
     for application in applications:
         logger.add_app(application)
         stop_app(application)
