@@ -16,7 +16,7 @@ class AndroidLogger:
 
     def __read(self):
         try:
-            self.child.expect('\r\r\n', timeout=3)
+            self.child.expect('\r\r\n', timeout=5)
             log_output = self.child.before
         except pexpect.TIMEOUT:
             log_output = None
@@ -49,12 +49,12 @@ def push_files(remote_path='/mnt/sdcard/Download', local_path='pdfs', adb='adb')
     remote_files = [remote_path + '/' + file for file in files]
     return remote_files
 
-def kill_app(application, process=None):
+def stop_app(application, process=None):
     if process:
         process.kill()
-    else:
-        kill_cmd = ['adb', 'shell', 'am', 'force-stop', application]
-        return popen_wait(kill_cmd)
+    home_screen() # Can't kill apps in foreground
+    stop_cmd = ['adb', 'shell', 'am', 'force-stop', application]
+    return popen_wait(stop_cmd)
 
 def popen_wait(cmd, message=None):
     p = subprocess.Popen(cmd)
@@ -76,18 +76,43 @@ def open_files(files, intent='android.intent.action.VIEW', mimetype='application
     files = [files[0], files[1]]
     for application in applications:
         logger.add_app(application)
-        kill_app(application)
+        stop_app(application)
         for file in files:
             p = open_file(file, intent, mimetype)
             logger.add_logs(application, file)
-            kill_app(application, process=p)
+            stop_app(application, process=p)
+        package_installer.uninstall_most_recent()
     return logger.get_logs()
+
+def home_screen():
+    return send_key_event('3')
+
+def send_key_event(event_num):
+    cmd = ['adb', 'shell', 'input', 'keyevent', event_num]
+    return popen_wait(cmd)
+
+def power_button():
+    return send_key_event('26')
+
+def kill_app(app):
+    stop_app(app)
+    kill_cmd = ['adb', 'shell', 'am', 'kill', app]
+    return popen_wait(kill_cmd)
+
+def adb_cmd(cmd):
+    return ['adb', '-e'] + cmd
+
+def adb_shell_cmd(cmd):
+    return adb_cmd(['shell']) + cmd
+
+def cleanup(files):
+    return popen_wait(adb_shell_cmd(['rm'] + files))
 
 def main():
     files = push_files()
     logs = open_files(files)
     print json.dumps(logs)
-
+    cleanup(files)
 
 if __name__=='__main__':
     main()

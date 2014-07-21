@@ -1,22 +1,38 @@
 import os
-from push_files import popen_wait
+from itertools import izip
+from push_files import popen_wait, kill_app
 
 class PackageInstaller:
     def __init__(self, path='apk'):
-        apks = os.listdir(directory)
+        apks = os.listdir(path)
         self.package_dirs = {apk: package_path(apk) for apk in apks}
+        self.__most_recently_installed = None
 
     def install_applications(self):
         apks = self.package_dirs.keys()
-        for apk in apks:
+        apps = [apk.split('.apk')[0] for apk in apks]
+        for apk, app in izip(apks, apps):
             apk_path = self.package_dirs.pop(apk)
-            install_package(apk_path)
-            yield apk
+            install_app(apk_path)
+            self.__most_recently_installed = app
+            yield app
 
+    def uninstall_most_recent(self):
+        app = self.__most_recently_installed
+        if app is not None:
+            uninstall_app(app)
+        else:
+            return None
 
-def package_path(apk, directory='apk'):
-    return '/'.join([os.getcwd(), directory, apk])
+def package_path(apk, path='apk'):
+    return '/'.join([os.getcwd(), path, apk])
 
-def install_package(package_path):
-    cmd = ['adb', '-e', 'install', package_path]
+def install_app(app_path):
+    cmd = ['adb', '-e', 'install', app_path]
     return popen_wait(cmd)
+
+def uninstall_app(app):
+    print 'UNINSTALL: ' + app
+    kill_app(app)
+    uninstall_cmd = ['adb', '-e', 'shell', 'pm', 'uninstall', app]
+    return popen_wait(uninstall_cmd)
