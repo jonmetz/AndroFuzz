@@ -1,12 +1,13 @@
 import os
 import subprocess
 import json
+import re
 import pexpect
 from install import PackageInstaller
 
 class AndroidLogger:
     def __init__(self):
-        self.logs = {}
+        self.logs = {'segfaults':{}}
         log_cmd = 'adb -e logcat ActivityManager:W \*:S'
         self.child = pexpect.spawn(log_cmd)
         try:
@@ -24,12 +25,24 @@ class AndroidLogger:
 
     def add_app(self, app):
         self.logs[app] = {}
+        return self.logs[app]
 
     def get_logs(self):
         return self.logs
 
+    def check_segfault(self, log_lines, program):
+        regex = re.compile('F/libc    \(  \d{2,4}\): Fatal signal 11 .*terminated by signal \(11\)', re.Unicode, re.DOTALL)
+        match = regex.search(regex, '\n'.join(log_lines))
+        if match:
+            self.logs['segfaults'] = {program: log_lines}
+            return
+        else:
+            return
+
     def add_logs(self, app, file):
-        self.logs[app][file] = self._get_logs(app, file)
+        log_lines = self._get_logs(app, file)
+        self.check_segfault(log_lines)
+        self.logs[app][file] = log_lines
         return self.logs[app][file]
 
     def _get_logs(self, app, file):
