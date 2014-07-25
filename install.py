@@ -17,6 +17,10 @@ class PackageInstaller:
             self.__most_recently_installed = app
             yield app
 
+    def uninstall(self, program):
+        uninstall_app(program)
+        return program
+
     def uninstall_most_recent(self):
         app = self.__most_recently_installed
         if app is not None:
@@ -32,7 +36,6 @@ def install_app(app_path):
     return popen_wait(cmd)
 
 def uninstall_app(app):
-    print 'UNINSTALL: ' + app
     kill_app(app)
     uninstall_cmd = ['adb', '-e', 'shell', 'pm', 'uninstall', app]
     return popen_wait(uninstall_cmd)
