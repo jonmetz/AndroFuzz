@@ -13,8 +13,8 @@ class AndroidLogger:
     def __init__(self, log_dir='logs'):
         self.logs = {}
         log_cmd = 'adb -e logcat'
-        self.logfile = None
-        self.add_log_dir(log_dir)
+        self.logfile = log_dir + '/logfile'
+        # self.add_log_dir(log_dir)
         self.child = pexpect.spawn(log_cmd)
         try:
             self.child.read_nonblocking(timeout=0)
@@ -59,12 +59,12 @@ class AndroidLogger:
         '''
         Allows for the collection of log data from an app
         '''
-        if self.logfile:
-            self.logfile.close()
-            self.logfile = None
+        # if self.logfile:
+        #     self.logfile.close()
+        #     self.logfile = None
         self.logs[app] = {}
-        log_path = self.log_dir + '/' + app + '.log'
-        self.logfile = open(log_path, 'a+')
+        # log_path = self.log_dir + '/' + app + '.log'
+        # self.logfile = open(log_path, 'a+')
         return self.logs[app], self
 
     def get_logs(self):
@@ -160,7 +160,6 @@ def open_files(files, intent='android.intent.action.VIEW', mimetype='application
             logger.add_logs(application, file)
             stop_app(application, process=p)
         application = package_installer.uninstall(application)
-        # app_logfiles.append(logger.write_app_logs(application))
     return app_logfiles
 
 def home_screen():
